@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MxHttp", "MxHttp\MxHttp.fsproj", "{F2DEEF2A-D6E0-4BAD-BA84-DBADC02EA4A8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8345107A-DDD5-424C-9A44-829E85285A2B}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MxHttp.Test", "MxHttp.Test\MxHttp.Test.fsproj", "{416FB3CE-B1EF-4ADA-9FE2-60BA1B2168D4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F2DEEF2A-D6E0-4BAD-BA84-DBADC02EA4A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2DEEF2A-D6E0-4BAD-BA84-DBADC02EA4A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2DEEF2A-D6E0-4BAD-BA84-DBADC02EA4A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2DEEF2A-D6E0-4BAD-BA84-DBADC02EA4A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{416FB3CE-B1EF-4ADA-9FE2-60BA1B2168D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{416FB3CE-B1EF-4ADA-9FE2-60BA1B2168D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{416FB3CE-B1EF-4ADA-9FE2-60BA1B2168D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{416FB3CE-B1EF-4ADA-9FE2-60BA1B2168D4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {59576FEB-5875-40E4-A72A-A7559D93BB89}
+	EndGlobalSection
+EndGlobal
