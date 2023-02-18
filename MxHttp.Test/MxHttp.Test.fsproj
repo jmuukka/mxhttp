@@ -8,6 +8,14 @@
     <UserSecretsId>c45d7f2f-cda8-4d61-b749-e23ede24c0c4</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>5</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningLevel>5</WarningLevel>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="Uri Tests.fs" />
     <Compile Include="Header Tests.fs" />
