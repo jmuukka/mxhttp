@@ -17,5 +17,4 @@ The HTTP request can be composed from series of transformations:
 - Response -> object
 
 With Request type you can simplify retries using Polly. I guess you know the problem that when the HttpRequestMessage has already been sent then you cannot send it again.
-
-When you wrap retry logic around Request -> HttpRequestMessage -> HttpResponseMessage transformations then on each retry a new HttpRequestMessage will be created.
+When you wrap retry logic around Request -> Response transformation then on each retry a new HttpRequestMessage will be created.

@@ -96,27 +96,25 @@ module AbsoluteUri =
         Uri'.concat left right
         |> create
 
-type [<NoComparison>] Uri =
-| AbsoluteUri of AbsoluteUri
-| RelativeUri of RelativeUri
+[<NoComparison>] 
+[<RequireQualifiedAccess>]
+type Uri =
+| Absolute of AbsoluteUri
+| Relative of RelativeUri
 
 module Uri =
 
-    //let concat abs rel =
-    //    AbsoluteUri.concat abs rel
-    //    |> AbsoluteUri
-
     let absolute uri =
         AbsoluteUri.create uri
-        |> AbsoluteUri
+        |> Uri.Absolute
 
     let relative uri =
         RelativeUri.create uri
-        |> RelativeUri
+        |> Uri.Relative
 
     let systemUriOf = function
-        | AbsoluteUri uri -> AbsoluteUri.systemUriOf uri
-        | RelativeUri uri -> RelativeUri.systemUriOf uri
+        | Uri.Absolute uri -> AbsoluteUri.systemUriOf uri
+        | Uri.Relative uri -> RelativeUri.systemUriOf uri
 
 type Key = private Key of string
 type Value = private Value of string
@@ -465,8 +463,7 @@ module Http =
         let private sendInternal (send : HttpRequestMessage -> Task<HttpResponseMessage>) (request : HttpRequestMessage) : Task<Result<HttpResponseMessage, exn>> =
             backgroundTask {
                 try
-                    let responseTask = send request
-                    let! response = Async.AwaitTask responseTask
+                    let! response = send request
                     return (Ok response)
                 with ex ->
                     return (Error ex)
@@ -484,8 +481,7 @@ module Http =
         let private sendInternal (send : HttpRequestMessage -> Task<HttpResponseMessage>) (request : HttpRequestMessage) : Task<Result<HttpResponseMessage, exn>> =
             task {
                 try
-                    let responseTask = send request
-                    let! response = Async.AwaitTask responseTask
+                    let! response = send request
                     return (Ok response)
                 with ex ->
                     return (Error ex)
