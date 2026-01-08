@@ -43,7 +43,7 @@ type [<NoComparison>] RelativeUri = private RelativeUri of Uri
 
 module private Uri' =
 
-    let concat (left : Uri) (right : Uri) =
+    let concat (left: Uri) (right: Uri) =
         let left = left.ToString()
         let right = right.ToString()
 
@@ -123,10 +123,10 @@ type Header = Key * Value list
 type Deserializer<'a> = MediaType * (string -> 'a)
 
 type [<NoComparison>] Request = {
-    Method : HttpMethod
-    ResourceUri : Uri
-    Headers : Header list
-    Content : RequestContent option
+    Method: HttpMethod
+    ResourceUri: Uri
+    Headers: Header list
+    Content: RequestContent option
 }
 and [<NoComparison>] RequestContent =
 | StringContent of MediaType * string
@@ -134,14 +134,14 @@ and [<NoComparison>] RequestContent =
 | FormUrlEncodedContent of (Key * Value) list
 
 type [<NoComparison>] Response = {
-    StatusCode : HttpStatusCode
-    Headers : Header list
-    Content : ResponseContent option
-    Request : Request
+    StatusCode: HttpStatusCode
+    Headers: Header list
+    Content: ResponseContent option
+    Request: Request
 }
 and ResponseContent = {
-    Headers : Header list
-    Data : ResponseContentData
+    Headers: Header list
+    Data: ResponseContentData
 }
 and ResponseContentData =
 | StringResponseContent of string
@@ -170,7 +170,7 @@ module Value =
 
 module Header =
 
-    let authorization (tokenType : string) (accessToken : string) =
+    let authorization (tokenType: string) (accessToken: string) =
         let key = Key "Authorization"
         let value = Value $"{tokenType} {accessToken}"
         key, [value]
@@ -214,7 +214,7 @@ module Request =
 
         // (string * string) list -> RequestContent
         let formUrlEncoded keyValuePairs =
-            List.map (fun (key : string, value : string) -> Key key, Value value) keyValuePairs
+            List.map (fun (key: string, value: string) -> Key key, Value value) keyValuePairs
             |> FormUrlEncodedContent
 
     let get headers resourceUri =
@@ -264,7 +264,7 @@ module Request =
         new HttpRequestMessage(request.Method, Uri.systemUriOf request.ResourceUri)
 
     // (Key * Value seq) list -> HttpRequestMessage -> HttpRequestMessage
-    let private applyHeaders headers (request : HttpRequestMessage) =
+    let private applyHeaders headers (request: HttpRequestMessage) =
         let applyHeader header =
             let key = fst header
             let values = snd header
@@ -286,7 +286,7 @@ module Request =
             new FormUrlEncodedContent(keyValuePairs) :> HttpContent
 
     // RequestContent option -> HttpRequestMessage -> HttpRequestMessage
-    let private applyContent content (request : HttpRequestMessage) =
+    let private applyContent content (request: HttpRequestMessage) =
         match content with
         | Some content ->
             request.Content <- createHttpContent content
@@ -305,7 +305,7 @@ module Response =
     open System.Net.Http.Headers
 
     // KeyValuePair<string, string seq> -> Key * Value list
-    let private toHeader (kvp : KeyValuePair<string, string seq>) =
+    let private toHeader (kvp: KeyValuePair<string, string seq>) =
         Key kvp.Key, Seq.map Value kvp.Value |> List.ofSeq
 
     // (KeyValuePair<string, string seq>) seq -> (Key * Value list) list
@@ -316,7 +316,7 @@ module Response =
     module private Content =
 
         // HttpContent -> Result<byte[], exn>
-        let readAsByteArray (content : HttpContent) =
+        let readAsByteArray (content: HttpContent) =
             try
                 content.ReadAsByteArrayAsync()
                 |> Task.result
@@ -325,7 +325,7 @@ module Response =
                 ex -> Error ex
 
         // HttpContent -> Result<string, exn>
-        let readAsString (content : HttpContent) =
+        let readAsString (content: HttpContent) =
             try
                 content.ReadAsStringAsync()
                 |> Task.result
@@ -334,7 +334,7 @@ module Response =
                 ex -> Error ex
 
         // HttpContentHeaders -> bool
-        let isByteArray (headers : HttpContentHeaders) =
+        let isByteArray (headers: HttpContentHeaders) =
             if headers.ContentType :> obj = null
             then true
             else
@@ -355,20 +355,20 @@ module Response =
             |> Result.map StringResponseContent
 
         // HttpResponseMessage -> Result<ResponseContentData, exn>
-        let toResponseContentData (response : HttpResponseMessage) =
+        let toResponseContentData (response: HttpResponseMessage) =
             let content = response.Content
             if isByteArray content.Headers
             then byteArrayResponseContent content
             else stringResponseContent content
 
         // HttpContentHeaders -> ResponseContentData -> ResponseContent
-        let toResponseContent (headers : HttpContentHeaders) responseContentData = {
+        let toResponseContent (headers: HttpContentHeaders) responseContentData = {
                 Headers = toHeaders headers
                 Data = responseContentData
             }
 
     // Request -> HttpResponseMessage -> ResponseContent option -> Response
-    let private toResponse request (response : HttpResponseMessage) content = {
+    let private toResponse request (response: HttpResponseMessage) content = {
             StatusCode = response.StatusCode
             Headers = toHeaders response.Headers
             Content = content
@@ -376,7 +376,7 @@ module Response =
         }
 
     // HttpStatusCode -> bool
-    let private isSuccessStatusCode (code : HttpStatusCode) =
+    let private isSuccessStatusCode (code: HttpStatusCode) =
         let code = int code
         200 <= code && code <= 299
 
@@ -389,7 +389,7 @@ module Response =
             Error (NonSuccessHttpStatusCode response)
 
     // Request -> HttpResponseMessage -> Result<Response, Failure>
-    let ofHttpResponseMessage request (response : HttpResponseMessage) =
+    let ofHttpResponseMessage request (response: HttpResponseMessage) =
         let content = response.Content
         let len = content.Headers.ContentLength
         if len.GetValueOrDefault() = 0L then
@@ -404,7 +404,7 @@ module Response =
 
     // Picks the first content type if more than one! Can there be more than one content type?
     // ResponseContent -> string option
-    let private contentType (content : ResponseContent) =
+    let private contentType (content: ResponseContent) =
         match List.tryFind (fun (Key key, _) -> key = "Content-Type") content.Headers with
         | Some (_, []) -> None
         | Some (_, mediaTypes) -> List.head mediaTypes |> Value.toString |> Some
@@ -420,7 +420,7 @@ module Response =
             None
 
     // Deserializer<'a> list -> Response -> Result<'a, Failure>
-    let parse<'a> (deserializers : Deserializer<'a> list) (response : Response) =
+    let parse<'a> (deserializers: Deserializer<'a> list) (response: Response) =
         match response.Content with
         | None ->
             let message = "There is no content."
@@ -460,7 +460,7 @@ module Http =
 
     module BackgroundTask =
 
-        let private sendInternal (send : HttpRequestMessage -> Task<HttpResponseMessage>) (request : HttpRequestMessage) : Task<Result<HttpResponseMessage, exn>> =
+        let private sendInternal (send: HttpRequestMessage -> Task<HttpResponseMessage>) (request: HttpRequestMessage) : Task<Result<HttpResponseMessage, exn>> =
             backgroundTask {
                 try
                     let! response = send request
@@ -478,7 +478,7 @@ module Http =
 
     module Task =
 
-        let private sendInternal (send : HttpRequestMessage -> Task<HttpResponseMessage>) (request : HttpRequestMessage) : Task<Result<HttpResponseMessage, exn>> =
+        let private sendInternal (send: HttpRequestMessage -> Task<HttpResponseMessage>) (request: HttpRequestMessage) : Task<Result<HttpResponseMessage, exn>> =
             task {
                 try
                     let! response = send request
@@ -496,7 +496,7 @@ module Http =
 
     module Async =
 
-        let private sendInternal (send : HttpRequestMessage -> Task<HttpResponseMessage>) (request : HttpRequestMessage) : Async<Result<HttpResponseMessage, exn>> =
+        let private sendInternal (send: HttpRequestMessage -> Task<HttpResponseMessage>) (request: HttpRequestMessage) : Async<Result<HttpResponseMessage, exn>> =
             async {
                 try
                     let responseTask = send request
@@ -513,7 +513,7 @@ module Http =
                 return responseOf request responseMessageResult
             }
 
-    let private sendInternal (send : HttpRequestMessage -> Task<HttpResponseMessage>) request =
+    let private sendInternal (send: HttpRequestMessage -> Task<HttpResponseMessage>) request =
         try
             send request
             |> Task.result
