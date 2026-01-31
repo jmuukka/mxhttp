@@ -1,4 +1,4 @@
-module MxHttp.ContentTests
+module MxHttp.RequestContentTests
 
 open Xunit
 
@@ -6,7 +6,7 @@ open Xunit
 let ``given an object when serialized to JSON string then expected RequestContent is returned`` () =
     let customer = { Name = "any" }
 
-    let actual = Content.string Json.serialize MediaType.applicationJson customer
+    let actual = RequestContent.string Json.serialize MediaType.applicationJson customer
 
     Assert.Equal(StringContent (MediaType.applicationJson, """{"Name":"any"}"""), actual)
 
@@ -14,7 +14,7 @@ let ``given an object when serialized to JSON string then expected RequestConten
 let ``given a byte array when byteArray then expected RequestContent is returned`` () =
     let bytes = [|1uy; 0uy; 255uy|]
 
-    let actual = Content.byteArray bytes
+    let actual = RequestContent.byteArray bytes
 
     Assert.Equal(ByteArrayContent bytes, actual)
 
@@ -29,6 +29,6 @@ let ``given a key value pairs when formUrlEncoded then expected RequestContent i
         Key.ofString "K2", Value.ofString "V2"
     ]
 
-    let actual = Content.formUrlEncoded keyValuePairs
+    let actual = RequestContent.formUrlEncoded keyValuePairs
 
     Assert.Equal(FormUrlEncodedContent expected, actual)

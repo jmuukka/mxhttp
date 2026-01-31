@@ -5,7 +5,7 @@ open System.Linq
 open System.Net.Http
 open Xunit
 
-let content = Content.string Json.serialize MediaType.applicationJson { Name = "any" }
+let content = RequestContent.string Json.serialize MediaType.applicationJson { Name = "any" }
 
 [<Fact>]
 let ``given headers and URI when get then returns expected Request`` () =

@@ -25,18 +25,12 @@ module Assert =
         | Ok response -> failwithf "%A" response
         | Error error -> f error
 
-//module Task =
-
-//    let result (task : Task<_>) =
-//        let awaiter = task.GetAwaiter()
-//        awaiter.GetResult()
-
-type CustomerResponse = {
-    Id: Guid
+type CustomerRequest = {
     Name: string
 }
 
-type CustomerRequest = {
+type CustomerResponse = {
+    Id: Guid
     Name: string
 }
 

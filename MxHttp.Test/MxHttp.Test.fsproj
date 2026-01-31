@@ -22,7 +22,7 @@
     <Compile Include="TestCore.fs" />
     <Compile Include="Uri Tests.fs" />
     <Compile Include="Header Tests.fs" />
-    <Compile Include="Content Tests.fs" />
+    <Compile Include="RequestContent Tests.fs" />
     <Compile Include="Request Tests.fs" />
     <Compile Include="Response Tests.fs" />
     <Compile Include="Http Tests.fs" />
@@ -44,10 +44,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MxHttp\MxHttp.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="7.0.200" />
   </ItemGroup>
 
 </Project>

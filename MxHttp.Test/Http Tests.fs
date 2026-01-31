@@ -4,7 +4,6 @@ open System
 open System.Net
 open System.Net.Http
 open System.Text
-open System.Threading
 open System.Threading.Tasks
 open Xunit
 
@@ -42,7 +41,7 @@ let ``given an async computation expression when send delete then returns correc
 let ``given an async computation expression when send post then returns correct Response`` () =
     let request = 
         { Name = "Any" }
-        |> Content.string Json.serialize MediaType.applicationJson
+        |> RequestContent.string Json.serialize MediaType.applicationJson
         |> Request.post [Header.acceptJson] (Uri.absolute "http://localhost/api/customers")
     let responseObject = { Id = Guid.NewGuid(); Name = "added" }
     let responseJson = Json.serialize responseObject
@@ -54,7 +53,7 @@ let ``given an async computation expression when send post then returns correct 
         ]
         Data = StringResponseContent responseJson
     }
-    let send ctoken req =
+    let send cancellationToken req =
         responseMessage HttpStatusCode.OK
         |> withJsonStringContent responseObject
         |> taskFromResponseMessage
@@ -101,7 +100,7 @@ let ``given an async computation expression when send response is an HTTP error 
         ]
         Data = StringResponseContent responseJson
     }
-    let send ctoken req =
+    let send cancellationToken req =
         responseMessage HttpStatusCode.BadRequest
         |> withJsonStringContent responseObject
         |> taskFromResponseMessage
@@ -130,6 +129,8 @@ let ``given an async computation expression when send response is an HTTP error 
 
     // with http server returning 500
         // -> should respond with error result
+
+    // request bytes
 
 //[<Fact>]
 //let ``given a synchronous pipeline when executed then returns ok`` () =

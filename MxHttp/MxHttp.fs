@@ -181,9 +181,9 @@ type Failure =
 | RequestException of Request * exn
 | ResponseContentException of Request * HttpResponseMessage * exn
 | NonSuccessHttpStatusCode of Response
-//| ParseError of Response * string
-//| DeserializeException of Response * exn
-//| Failures of Failure list
+| ParseError of Response * string
+| DeserializeException of Response * exn
+| Failures of Failure list
 
 type HttpSendRequest = CancellationToken -> HttpRequestMessage -> Task<HttpResponseMessage>
 
@@ -230,7 +230,7 @@ module HttpMethod =
 
     let patch = HttpMethod("PATCH")
 
-module Content =
+module RequestContent =
 
     // ('a -> string) -> MediaType -> 'a -> RequestContent
     let string serialize mediaType object =
@@ -245,6 +245,18 @@ module Content =
     let formUrlEncoded keyValuePairs =
         List.map (fun (key: string, value: string) -> Key key, Value value) keyValuePairs
         |> FormUrlEncodedContent
+
+    // RequestContent -> HttpContent
+    let toHttpContent = function
+        | StringContent ((MediaType mediaType), text) ->
+            new StringContent(text, Encoding.UTF8, mediaType) :> HttpContent
+
+        | ByteArrayContent bytes ->
+            new ByteArrayContent(bytes) :> HttpContent
+
+        | FormUrlEncodedContent keyValuePairs ->
+            let keyValuePairs = List.map (fun ((Key key), (Value value)) -> KeyValuePair<string, string>(key, value)) keyValuePairs
+            new FormUrlEncodedContent(keyValuePairs) :> HttpContent
 
 module Request =
 
@@ -304,23 +316,11 @@ module Request =
         List.iter applyHeader headers
         request
 
-    // RequestContent -> HttpContent
-    let private createHttpContent = function
-        | StringContent ((MediaType mediaType), text) ->
-            new StringContent(text, Encoding.UTF8, mediaType) :> HttpContent
-
-        | ByteArrayContent bytes ->
-            new ByteArrayContent(bytes) :> HttpContent
-
-        | FormUrlEncodedContent keyValuePairs ->
-            let keyValuePairs = List.map (fun ((Key key), (Value value)) -> KeyValuePair<string, string>(key, value)) keyValuePairs
-            new FormUrlEncodedContent(keyValuePairs) :> HttpContent
-
     // RequestContent option -> HttpRequestMessage -> HttpRequestMessage
     let private applyContent content (request: HttpRequestMessage) =
         match content with
         | Some content ->
-            request.Content <- createHttpContent content
+            request.Content <- RequestContent.toHttpContent content
         | None ->
             ()
         request
@@ -346,24 +346,24 @@ module Response =
 
         open System.Net.Http.Headers
 
-        // HttpContent -> Result<byte[], exn>
+        // HttpContent -> Async<ResponseContentData>
         let readAsByteArray (content: HttpContent) =
             async {
                 let! bytes =
                     content.ReadAsByteArrayAsync()
                     |> Async.AwaitTask
 
-                return ByteArrayResponseContent bytes |> Some
+                return ByteArrayResponseContent bytes
             }
 
-        // HttpContent -> Result<string, exn>
+        // HttpContent -> Async<ResponseContentData>
         let readAsString (content: HttpContent) =
             async {
                 let! text =
                     content.ReadAsStringAsync()
                     |> Async.AwaitTask
 
-                return StringResponseContent text |> Some
+                return StringResponseContent text
             }
 
         // HttpContentHeaders -> bool
@@ -377,17 +377,7 @@ module Response =
                 then true
                 else MediaType mediaType = MediaType.applicationOctetStream
 
-        //// HttpContent -> Result<ResponseContentData, exn>
-        //let byteArrayResponseContent content =
-        //    readAsByteArray content
-        //    |> Result.map ByteArrayResponseContent
-
-        //// HttpContent -> Result<ResponseContentData, exn>
-        //let stringResponseContent content =
-        //    readAsString content
-        //    |> Result.map StringResponseContent
-
-        // HttpResponseMessage -> Result<ResponseContentData, exn>
+        // HttpResponseMessage -> Async<ResponseContentData option>
         let toResponseContentData (content: HttpContent) =
             if isByteArray content.Headers
             then readAsByteArray content
@@ -397,6 +387,29 @@ module Response =
         let toResponseContent (headers: HttpContentHeaders) responseContentData = {
                 Headers = toHeaders headers
                 Data = responseContentData
+            }
+
+        let tryReadResponseContentData request (httpResponseMessage: HttpResponseMessage) : Async<Result<ResponseContentData option, Failure>> =
+            async {
+                try
+                    let httpContent = httpResponseMessage.Content
+                    let contentLength = httpContent.Headers.ContentLength
+
+                    let! contentDataMaybe =
+                        if contentLength.GetValueOrDefault() = 0L then
+                            async { return None }
+                        else
+                            async {
+                                let! responseContentData = toResponseContentData httpContent
+                                return Some responseContentData
+                            }                            
+
+                    return Ok contentDataMaybe
+                with ex ->
+                    return
+                        (request, httpResponseMessage, ex)
+                        |> ResponseContentException
+                        |> Error
             }
 
     // Request -> HttpResponseMessage -> ResponseContent option -> Response
@@ -420,104 +433,78 @@ module Response =
         | _ ->
             Error (NonSuccessHttpStatusCode response)
 
-    // Request -> HttpResponseMessage -> Result<Response, Failure>
-    //let ofHttpResponseMessage request (response: HttpResponseMessage) =
-    //    let content = response.Content
-    //    let len = content.Headers.ContentLength
-    //    if len.GetValueOrDefault() = 0L then
-    //        Ok (toResponse request response None)
-    //    else
-    //        Content.toResponseContentData response
-    //        |> Result.map (Content.toResponseContent content.Headers >> Some >> toResponse request response)
-    //        |> Result.mapError (fun ex -> ResponseContentException (request, response, ex))
-    //    |> Result.bind ensureSuccessStatusCode
+    // Request -> HttpResponseMessage -> Async<Result<Response, Failure>>
+    let ofHttpResponseMessage (request: Request) (httpResponseMessage: HttpResponseMessage) : Async<Result<Response, Failure>> =
+        asyncResult {
+            let! responseContentDataMaybe = Content.tryReadResponseContentData request httpResponseMessage
+            let responseContentMaybe = Option.map (Content.toResponseContent httpResponseMessage.Content.Headers) responseContentDataMaybe
+            let! response =
+                toResponse request httpResponseMessage responseContentMaybe
+                |> ensureSuccessStatusCode
+                |> Async.retn
+            return response
+        }
 
     // Parse
 
-    //// Picks the first content type if more than one! Can there be more than one content type?
-    //// ResponseContent -> string option
-    //let private contentType (content: ResponseContent) =
-    //    match List.tryFind (fun (Key key, _) -> key = "Content-Type") content.Headers with
-    //    | Some (_, []) -> None
-    //    | Some (_, mediaTypes) -> List.head mediaTypes |> Value.toString |> Some
-    //    | None -> None
+    // Picks the first content type if more than one! Can there be more than one content type?
+    // ResponseContent -> string option
+    let private contentType (content: ResponseContent) =
+        match List.tryFind (fun (Key key, _) -> key = "Content-Type") content.Headers with
+        | Some (_, []) -> None
+        | Some (_, mediaTypes) -> List.head mediaTypes |> Value.toString |> Some
+        | None -> None
 
-    //// ResponseContent -> string option
-    //let private mediaType content =
-    //    match contentType content with
-    //    | Some contentType ->
-    //        let parts = contentType.Split([|';'|])
-    //        if parts.Length >= 1 && parts.[0].Length > 0 then Some parts.[0] else None
-    //    | None ->
-    //        None
+    // ResponseContent -> string option
+    let private mediaType content =
+        match contentType content with
+        | Some contentType ->
+            let parts = contentType.Split([|';'|])
+            if parts.Length >= 1 && parts.[0].Length > 0 then Some parts.[0] else None
+        | None ->
+            None
 
-    //// Deserializer<'a> list -> Response -> Result<'a, Failure>
-    //let parse<'a> (deserializers: Deserializer<'a> list) (response: Response) =
-    //    match response.Content with
-    //    | None ->
-    //        let message = "There is no content."
-    //        Error (ParseError (response, message))
-    //    | Some content ->
-    //        let mediaType =
-    //            mediaType content
-    //            |> Option.defaultValue ""
+    // Deserializer<'a> list -> Response -> Result<'a, Failure>
+    let parse<'a> (deserializers: Deserializer<'a> list) (response: Response) =
+        match response.Content with
+        | None ->
+            let message = "There is no content."
+            Error (ParseError (response, message))
+        | Some content ->
+            let mediaType =
+                mediaType content
+                |> Option.defaultValue ""
 
-    //        let equalsDeserializer deserializerData =
-    //            (fst deserializerData) = MediaType mediaType
+            let equalsDeserializer deserializerData =
+                (fst deserializerData) = MediaType mediaType
 
-    //        match List.tryFind equalsDeserializer deserializers with
-    //        | Some value ->
-    //            match content.Data with
-    //            | StringResponseContent text ->
-    //                let deserialize = snd value
-    //                try
-    //                    Ok (deserialize text)
-    //                with ex ->
-    //                    Error (DeserializeException (response, ex))
-    //            | ByteArrayResponseContent _ ->
-    //                let message = $"The content is a byte array. Cannot parse it to object."
-    //                Error (ParseError (response, message))
-    //        | None ->
-    //            let message = $"Deserializer for {mediaType} is not configured."
-    //            Error (ParseError (response, message))
+            match List.tryFind equalsDeserializer deserializers with
+            | Some value ->
+                match content.Data with
+                | StringResponseContent text ->
+                    let deserialize = snd value
+                    try
+                        Ok (deserialize text)
+                    with ex ->
+                        Error (DeserializeException (response, ex))
+                | ByteArrayResponseContent _ ->
+                    let message = "The content is a byte array. Cannot parse it to object."
+                    Error (ParseError (response, message))
+            | None ->
+                let message = $"Deserializer for {mediaType} is not configured."
+                Error (ParseError (response, message))
 
 module Http =
 
-    //let private responseOf request responseMessageResult =
-    //    result {
-    //        let! responseMessage =
-    //            responseMessageResult
-    //            |> Result.mapError (fun ex -> RequestException (request, ex))
-    //        return! Response.ofHttpResponseMessage request responseMessage
-    //    }
-
-    //module Task =
-
-    //    let private sendInternal (send: HttpRequestMessage -> Task<HttpResponseMessage>) (request: HttpRequestMessage) : Task<Result<HttpResponseMessage, exn>> =
-    //        backgroundTask {
-    //            try
-    //                let! response = send request
-    //                return (Ok response)
-    //            with ex ->
-    //                return (Error ex)
-    //        }
-
-        //let send : (HttpRequestMessage -> Task<HttpResponseMessage>) -> Request -> Task<Result<Response, Failure>> = fun send request ->
-        //    backgroundTask {
-        //        let requestMessage = Request.toHttpRequestMessage request
-        //        let! responseMessageResult = sendInternal send requestMessage
-        //        return responseOf request responseMessageResult
-        //    }
-
     module Async =
 
-        let private sendRequest (send: HttpSendRequest) (request: Request) : Async<Result<HttpResponseMessage, Failure>> =
+        let private sendRequest send request =
             async {
                 try
-                    let httpRequestMessage = Request.toHttpRequestMessage request
                     let! cancellationToken = Async.CancellationToken
                     let! httpResponseMessage =
-                        httpRequestMessage
+                        request
+                        |> Request.toHttpRequestMessage
                         |> send cancellationToken
                         |> Async.AwaitTask
 
@@ -529,41 +516,16 @@ module Http =
                         |> Error
             }
 
-        let private tryReadResponseContentData request (httpResponseMessage: HttpResponseMessage) : Async<Result<ResponseContentData option, Failure>> =
-            async {
-                try
-                    let httpContent = httpResponseMessage.Content
-                    let len = httpContent.Headers.ContentLength
-
-                    let! contentData =
-                        if len.GetValueOrDefault() = 0L then
-                            async { return None }
-                        else
-                            Response.Content.toResponseContentData httpContent
-
-                    return Ok contentData
-                with ex ->
-                    return
-                        (request, httpResponseMessage, ex)
-                        |> ResponseContentException
-                        |> Error
-            }
-
-        let send (send: HttpSendRequest) (request: Request) : Async<Result<Response, Failure>> =
+        let send send request =
             asyncResult {
                 let! httpResponseMessage = sendRequest send request
-                let! responseContentDataMaybe = tryReadResponseContentData request httpResponseMessage
-                let responseContentMaybe = Option.map (Response.Content.toResponseContent httpResponseMessage.Content.Headers) responseContentDataMaybe
-                let! response =
-                    Response.toResponse request httpResponseMessage responseContentMaybe
-                    |> Response.ensureSuccessStatusCode
-                    |> Async.retn
+                let! response = Response.ofHttpResponseMessage request httpResponseMessage
                 return response
             }
 
-    //module Sync =
+    module Sync =
 
-    //    let send (send: HttpSendRequest) timeout cancellationToken (request: Request) : Result<Response, Failure> =
-    //        let computation = Async.send send request
+        let send send timeout cancellationToken request =
+            let computation = Async.send send request
 
-    //        Async.RunSynchronously (computation, timeout / 1<ms>, cancellationToken)
+            Async.RunSynchronously (computation, timeout / 1<ms>, cancellationToken)
