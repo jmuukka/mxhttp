@@ -10,16 +10,19 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <WarningLevel>5</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <WarningLevel>5</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="TestCore.fs" />
     <Compile Include="Uri Tests.fs" />
     <Compile Include="Header Tests.fs" />
-    <Compile Include="Request Content Tests.fs" />
+    <Compile Include="Content Tests.fs" />
     <Compile Include="Request Tests.fs" />
     <Compile Include="Response Tests.fs" />
     <Compile Include="Http Tests.fs" />

@@ -3,19 +3,9 @@ module MxHttp.RequestTests
 open System
 open System.Linq
 open System.Net.Http
-open System.Text.Json
 open Xunit
 
-module Json =
-
-    let serialize object =
-        JsonSerializer.Serialize(object)
-
-type Customer = {
-    Name : string
-}
-
-let content = Request.Content.string Json.serialize MediaType.applicationJson { Name = "any" }
+let content = Content.string Json.serialize MediaType.applicationJson { Name = "any" }
 
 [<Fact>]
 let ``given headers and URI when get then returns expected Request`` () =
