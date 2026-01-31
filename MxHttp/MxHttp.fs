@@ -85,42 +85,45 @@ module private Uri' =
 
 module RelativeUri =
 
-    // TODO ofString
-    let create uri =
+    let ofString uri =
         Uri(uri, UriKind.Relative)
         |> RelativeUri
 
-    let tryCreate uri =
+    let tryOfString uri =
         try
-            create uri
+            ofString uri
             |> Some
         with _ ->
             None
 
     let systemUriOf (RelativeUri uri) = uri
 
+    let toString uri = (systemUriOf uri).ToString()
+
     let concat (RelativeUri left) (RelativeUri right) =
         Uri'.concat left right
-        |> create
+        |> ofString
 
 module AbsoluteUri =
 
-    let create uri =
+    let ofString uri =
         Uri(uri, UriKind.Absolute)
         |> AbsoluteUri
 
-    let tryCreate uri =
+    let tryOfString uri =
         try
-            create uri
+            ofString uri
             |> Some
         with _ ->
             None
 
     let systemUriOf (AbsoluteUri uri) = uri
 
+    let toString uri = (systemUriOf uri).ToString()
+
     let concat (AbsoluteUri left) (RelativeUri right) =
         Uri'.concat left right
-        |> create
+        |> ofString
 
 [<NoComparison>] 
 [<RequireQualifiedAccess>]
@@ -131,11 +134,11 @@ type Uri =
 module Uri =
 
     let absolute uri =
-        AbsoluteUri.create uri
+        AbsoluteUri.ofString uri
         |> Uri.Absolute
 
     let relative uri =
-        RelativeUri.create uri
+        RelativeUri.ofString uri
         |> Uri.Relative
 
     let systemUriOf = function

@@ -4,77 +4,77 @@ open System
 open Xunit
 
 [<Fact>]
-let ``given a valid relative URI when create then systemUri of it is an relative URI`` () =
+let ``given a valid relative URI when ofString then toString equals with an original string`` () =
     let uri = "api/customers"
 
-    let actual = RelativeUri.create uri
+    let actual = RelativeUri.ofString uri
 
-    Assert.Equal(Uri(uri, UriKind.Relative), RelativeUri.systemUriOf actual)
+    Assert.Equal(uri, RelativeUri.toString actual)
 
 [<Fact>]
-let ``given an ivalid relative URI when create then throws an exception`` () =
+let ``given an invalid relative URI when ofString then throws an exception`` () =
     let uri = "http://localhost"
 
     let created =
         try
-            RelativeUri.create uri |> ignore
+            RelativeUri.ofString uri |> ignore
             true
         with _ ->
             false
 
-    if created then failwith "RelativeUri.create should have thrown an exception for invalid URI"
+    if created then failwith "RelativeUri.ofString should have thrown an exception for invalid URI"
 
 [<Fact>]
-let ``given a valid relative URI when tryCreate then returns Some relative URI`` () =
+let ``given a valid relative URI when tryOfString then returns Some relative URI and when converted toString then equals with an original string`` () =
     let uri = "api/customers"
 
-    match RelativeUri.tryCreate uri with
-    | Some actual -> Assert.Equal(Uri(uri, UriKind.Relative), RelativeUri.systemUriOf actual)
-    | None -> failwith "RelativeUri.tryCreate should have succeeded for valid URI"
+    match RelativeUri.tryOfString uri with
+    | Some actual -> Assert.Equal(uri, RelativeUri.toString actual)
+    | None -> failwith "RelativeUri.tryOfString should have succeeded for valid URI"
 
 [<Fact>]
-let ``given an invalid relative URI when tryCreate then returns None`` () =
+let ``given an invalid relative URI when tryOfString then returns None`` () =
     let uri = "https://localhost"
 
-    match RelativeUri.tryCreate uri with
-    | Some u -> failwith "RelativeUri.tryCreate should not have succeeded for invalid URI"
+    match RelativeUri.tryOfString uri with
+    | Some _ -> failwith "RelativeUri.tryOfString should not have succeeded for invalid URI"
     | None -> ()
 
 [<Fact>]
-let ``given a valid absolute URI when create then systemUri of it is an absolute URI`` () =
+let ``given a valid absolute URI when ofString then toString equals with an original string`` () =
     let uri = "http://localhost"
 
-    let actual = AbsoluteUri.create uri
+    let actual = AbsoluteUri.ofString uri
 
-    Assert.Equal(Uri(uri, UriKind.Absolute), AbsoluteUri.systemUriOf actual)
+    Assert.Equal(uri + "/", AbsoluteUri.toString actual)
 
 [<Fact>]
-let ``given an ivalid absolute URI when create then throws an exception`` () =
+let ``given an invalid absolute URI when ofString then throws an exception`` () =
     let uri = "http://local host"
 
     let created =
         try
-            AbsoluteUri.create uri |> ignore
+            AbsoluteUri.ofString uri |> ignore
             true
         with _ ->
             false
 
-    if created then failwith "AbsoluteUri.create should have thrown an exception for invalid URI"
+    if created then failwith "AbsoluteUri.ofString should have thrown an exception for invalid URI"
 
 [<Fact>]
-let ``given a valid absolute URI when tryCreate then returns Some absolute URI`` () =
+let ``given a valid absolute URI when tryOfString then returns Some absolute URI and when converted toString then equals with an original string`` () =
     let uri = "http://localhost"
 
-    match AbsoluteUri.tryCreate uri with
-    | Some actual -> Assert.Equal(Uri(uri, UriKind.Absolute), AbsoluteUri.systemUriOf actual)
-    | None -> failwith "AbsoluteUri.tryCreate should have succeeded for valid URI"
+    match AbsoluteUri.tryOfString uri with
+    | Some actual -> Assert.Equal(uri + "/", AbsoluteUri.toString actual)
+    | None -> failwith "AbsoluteUri.tryOfString should have succeeded for valid URI"
 
 [<Fact>]
-let ``given an invalid absolute URI when tryCreate then returns None`` () =
+let ``given an invalid absolute URI when tryOfString then returns None`` () =
     let uri = "https//localhost"
 
-    match AbsoluteUri.tryCreate uri with
-    | Some u -> failwith "AbsoluteUri.tryCreate should not have succeeded for invalid URI"
+    match AbsoluteUri.tryOfString uri with
+    | Some u -> failwith "AbsoluteUri.tryOfString should not have succeeded for invalid URI"
     | None -> ()
 
 [<Theory>]
@@ -83,12 +83,12 @@ let ``given an invalid absolute URI when tryCreate then returns None`` () =
 [<InlineData("api/", "customers", "api/customers")>]
 [<InlineData("api", "/customers", "api/customers")>]
 let ``given two relative URIs when concat then returns concatenated URI`` left right expected =
-    let left = RelativeUri.create left
-    let right = RelativeUri.create right
+    let left = RelativeUri.ofString left
+    let right = RelativeUri.ofString right
 
     let actual = RelativeUri.concat left right
 
-    Assert.Equal(Uri(expected, UriKind.Relative), RelativeUri.systemUriOf actual)
+    Assert.Equal(expected, RelativeUri.toString actual)
 
 [<Theory>]
 [<InlineData("http://localhost", "api", "http://localhost/api")>]
@@ -96,12 +96,12 @@ let ``given two relative URIs when concat then returns concatenated URI`` left r
 [<InlineData("http://localhost/", "api", "http://localhost/api")>]
 [<InlineData("http://localhost", "/api", "http://localhost/api")>]
 let ``given an absolute URI and a relative URI when concat then returns concatenated URI`` left right expected =
-    let left = AbsoluteUri.create left
-    let right = RelativeUri.create right
+    let left = AbsoluteUri.ofString left
+    let right = RelativeUri.ofString right
 
     let actual = AbsoluteUri.concat left right
 
-    Assert.Equal(Uri(expected, UriKind.Absolute), AbsoluteUri.systemUriOf actual)
+    Assert.Equal(expected, AbsoluteUri.toString actual)
 
 [<Fact>]
 let ``given an absolute URI string when absolute then returns a Uri with AbsoluteUri case`` () =
