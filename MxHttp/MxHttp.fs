@@ -13,41 +13,31 @@ type ms
 
 module private Result =
 
-    let either onOk onError = function
+    let inline eitherBind onOk onError = function
         | Ok value -> onOk value
         | Error error -> onError error
 
-    let retn value = Ok value
-
 module private Async =
 
-    let bind binder input = async.Bind(input, binder)
+    let inline retn value =
+        async.Return value
 
-    let inline retn value = async.Return value
+    let inline bind binder input =
+        async.Bind(input, binder)
+
+    let inline map mapper input =
+        bind (fun value -> mapper value |> retn) input
 
 module private AsyncResult =
 
-    let error error =
-        Error error
-        |> Async.retn
+    let inline error error =
+        Async.retn (Error error)
 
-    let bind binder input =
-        Async.bind (Result.either binder error) input
+    let inline bind binder input =
+        Async.bind (Result.eitherBind binder error) input
 
-[<AutoOpen>]
-module private AsyncResultBuilder =
-
-    type AsyncResultBuilder () =
-
-        member _.Bind(asyncResult, binder) =
-            AsyncResult.bind binder asyncResult
-
-        member _.Return value =
-            value
-            |> Result.retn
-            |> Async.retn
-
-    let asyncResult = new AsyncResultBuilder()
+    let inline mapError mapper input =
+        Async.map (Result.mapError mapper) input
 
 type MediaType = private MediaType of string
 
@@ -212,8 +202,8 @@ module Header =
         |> Convert.ToBase64String
         |> authorization "Basic"
 
-    let bearerAuthorization =
-        authorization "Bearer"
+    let bearerAuthorization accessToken =
+        authorization "Bearer" accessToken
 
     let accept (MediaType mediaType) =
         let key = Key "Accept"
@@ -389,7 +379,7 @@ module Response =
                 Data = responseContentData
             }
 
-        let tryReadResponseContentData request (httpResponseMessage: HttpResponseMessage) : Async<Result<ResponseContentData option, Failure>> =
+        let tryReadResponseContentData (httpResponseMessage: HttpResponseMessage) : Async<Result<ResponseContentData option, exn>> =
             async {
                 try
                     let httpContent = httpResponseMessage.Content
@@ -406,10 +396,7 @@ module Response =
 
                     return Ok contentDataMaybe
                 with ex ->
-                    return
-                        (request, httpResponseMessage, ex)
-                        |> ResponseContentException
-                        |> Error
+                    return Error ex
             }
 
     // Request -> HttpResponseMessage -> ResponseContent option -> Response
@@ -435,15 +422,14 @@ module Response =
 
     // Request -> HttpResponseMessage -> Async<Result<Response, Failure>>
     let ofHttpResponseMessage (request: Request) (httpResponseMessage: HttpResponseMessage) : Async<Result<Response, Failure>> =
-        asyncResult {
-            let! responseContentDataMaybe = Content.tryReadResponseContentData request httpResponseMessage
-            let responseContentMaybe = Option.map (Content.toResponseContent httpResponseMessage.Content.Headers) responseContentDataMaybe
-            let! response =
-                toResponse request httpResponseMessage responseContentMaybe
-                |> ensureSuccessStatusCode
-                |> Async.retn
-            return response
-        }
+        Content.tryReadResponseContentData httpResponseMessage
+        |> AsyncResult.mapError (fun ex -> ResponseContentException (request, httpResponseMessage, ex))
+        |> AsyncResult.bind (
+            Option.map (Content.toResponseContent httpResponseMessage.Content.Headers) >>
+            (toResponse request httpResponseMessage) >>
+            ensureSuccessStatusCode >>
+            Async.retn
+        )
 
     // Parse
 
@@ -516,12 +502,9 @@ module Http =
                         |> Error
             }
 
-        let send send request =
-            asyncResult {
-                let! httpResponseMessage = sendRequest send request
-                let! response = Response.ofHttpResponseMessage request httpResponseMessage
-                return response
-            }
+        let send httpSend request =
+            sendRequest httpSend request
+            |> AsyncResult.bind (Response.ofHttpResponseMessage request)
 
     module Sync =
 
