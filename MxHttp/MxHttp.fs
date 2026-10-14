@@ -435,15 +435,15 @@ module Response =
 
     // Picks the first content type if more than one! Can there be more than one content type?
     // ResponseContent -> string option
-    let private contentType (content: ResponseContent) =
+    let private contentTypeOf (content: ResponseContent) =
         match List.tryFind (fun (Key key, _) -> key = "Content-Type") content.Headers with
         | Some (_, []) -> None
         | Some (_, mediaTypes) -> List.head mediaTypes |> Value.toString |> Some
         | None -> None
 
     // ResponseContent -> string option
-    let private mediaType content =
-        match contentType content with
+    let private mediaTypeOf content =
+        match contentTypeOf content with
         | Some contentType ->
             let parts = contentType.Split([|';'|])
             if parts.Length >= 1 && parts.[0].Length > 0 then Some parts.[0] else None
@@ -458,8 +458,9 @@ module Response =
             Error (ParseError (response, message))
         | Some content ->
             let mediaType =
-                mediaType content
+                mediaTypeOf content
                 |> Option.defaultValue ""
+                |> MediaType
 
             let equalsDeserializer deserializerData =
                 (fst deserializerData) = MediaType mediaType
