@@ -485,14 +485,14 @@ module Http =
 
     module Async =
 
-        let private sendRequest send request =
+        let private sendRequest httpSend request =
             async {
                 try
                     let! cancellationToken = Async.CancellationToken
                     let! httpResponseMessage =
                         request
                         |> Request.toHttpRequestMessage
-                        |> send cancellationToken
+                        |> httpSend cancellationToken
                         |> Async.AwaitTask
 
                     return Ok httpResponseMessage
@@ -509,7 +509,7 @@ module Http =
 
     module Sync =
 
-        let send send timeout cancellationToken request =
-            let computation = Async.send send request
+        let send httpSend timeout cancellationToken request =
+            let computation = Async.send httpSend request
 
             Async.RunSynchronously (computation, timeout / 1<ms>, cancellationToken)
