@@ -139,7 +139,7 @@ type Key = private Key of string
 type Value = private Value of string
 type Header = Key * Value list
 
-type Deserializer<'a> = MediaType * (string -> 'a)
+type Deserializer<'a> = string -> 'a
 
 type [<NoComparison>] Request = {
     Method: HttpMethod
@@ -450,8 +450,8 @@ module Response =
         | None ->
             None
 
-    // Deserializer<'a> list -> Response -> Result<'a, Failure>
-    let parse<'a> (deserializers: Deserializer<'a> list) (response: Response) =
+    // Map<MediaType, Deserializer<'a>> -> Response -> Result<'a, Failure>
+    let parse<'a> (deserializers: Map<MediaType, Deserializer<'a>>) (response: Response) =
         match response.Content with
         | None ->
             let message = "There is no content."
@@ -462,14 +462,10 @@ module Response =
                 |> Option.defaultValue ""
                 |> MediaType
 
-            let equalsDeserializer deserializerData =
-                (fst deserializerData) = MediaType mediaType
-
-            match List.tryFind equalsDeserializer deserializers with
-            | Some value ->
+            match Map.tryFind mediaType deserializers with
+            | Some deserialize ->
                 match content.Data with
                 | StringResponseContent text ->
-                    let deserialize = snd value
                     try
                         Ok (deserialize text)
                     with ex ->

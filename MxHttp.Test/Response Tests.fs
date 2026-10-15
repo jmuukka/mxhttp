@@ -67,9 +67,8 @@ let ``given a Bad Request HttpResponseMessage when to Response then returns Erro
 
 [<Fact>]
 let ``given a JSON response when parse then expected object returned`` () =
-    let deserializers = [
-        MediaType.applicationJson, Json.deserialize
-    ]
+    let deserializers =
+        Map.empty.Add(MediaType.applicationJson, Json.deserialize)
     let json = """{"Name":"Any"}"""
     let response = {
         StatusCode = HttpStatusCode.OK
