@@ -26,7 +26,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="MxHttp.fs" />
+    <Compile Include="MediaType.fs" />
+    <Compile Include="Uri.fs" />
+    <Compile Include="Header.fs" />
+    <Compile Include="Request.fsi" />
+    <Compile Include="Request.fs" />
+    <Compile Include="Private.fs" />
+    <Compile Include="Response.fsi" />
+    <Compile Include="Response.fs" />
+    <Compile Include="Http.fsi" />
+    <Compile Include="Http.fs" />
   </ItemGroup>
 
   <ItemGroup>

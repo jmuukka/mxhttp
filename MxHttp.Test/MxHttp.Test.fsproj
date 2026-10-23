@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -20,11 +20,16 @@
 
   <ItemGroup>
     <Compile Include="TestCore.fs" />
+    <Compile Include="MediaType Tests.fs" />
     <Compile Include="Uri Tests.fs" />
     <Compile Include="Header Tests.fs" />
     <Compile Include="RequestContent Tests.fs" />
     <Compile Include="Request Tests.fs" />
-    <Compile Include="Response Tests.fs" />
+    <Compile Include="Response Task Tests.fs" />
+    <Compile Include="Response Async Tests.fs" />
+    <Compile Include="Response Parse Tests.fs" />
+    <Compile Include="Http Task Tests.fs" />
+    <Compile Include="Http Async Tests.fs" />
     <Compile Include="Http Tests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

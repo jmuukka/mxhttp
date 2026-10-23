@@ -5,6 +5,18 @@ open System.Text
 open Xunit
 
 [<Fact>]
+let ``when Key ofString then toString returns expected string`` () =
+    let actual = Key.ofString "k"
+
+    Assert.Equal("k", Key.toString actual)
+
+[<Fact>]
+let ``when Value ofString then toString returns expected string`` () =
+    let actual = Value.ofString "k"
+
+    Assert.Equal("k", Value.toString actual)
+
+[<Fact>]
 let ``when acceptJson then returns correct header`` () =
     let actual = Header.acceptJson
 
