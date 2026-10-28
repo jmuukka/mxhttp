@@ -2,6 +2,7 @@
 
 open System.Collections.Generic
 open System.Net.Http
+open System.Net.Http.Headers
 open System.Text
 
 type [<NoComparison>] Request = {
@@ -10,45 +11,59 @@ type [<NoComparison>] Request = {
     Headers: Header list
     Content: RequestContent option
 }
-and [<NoComparison>] RequestContent =
+and RequestContent =
 | StringContent of MediaType * string
 | ByteArrayContent of byte array
 | FormUrlEncodedContent of (Key * Value) list
 
+module HttpMethod =
+
+    let patch = HttpMethod("PATCH")
+    
+    //let query = HttpMethod("QUERY")
+
 module RequestContent =
 
-    // ('a -> string) -> MediaType -> 'a -> RequestContent
     let string serialize mediaType object =
         let content = serialize object
         StringContent (mediaType, content)
 
-    // byte array -> RequestContent
     let byteArray bytes =
         ByteArrayContent bytes
 
-    // (string * string) list -> RequestContent
     let formUrlEncoded keyValuePairs =
         List.map (fun (key: string, value: string) -> Key key, Value value) keyValuePairs
         |> FormUrlEncodedContent
 
-    // RequestContent -> HttpContent
-    let toHttpContent = function
-        | StringContent ((MediaType mediaType), text) ->
-            new StringContent(text, Encoding.UTF8, mediaType) :> HttpContent
+module HttpContent =
+
+    let ofString mediaType text =
+        new StringContent(text, Encoding.UTF8, MediaType.toString mediaType) :> HttpContent
+
+    let ofBytes bytes =
+        let content = new ByteArrayContent(bytes)
+        let mediaType = MediaType.toString MediaType.applicationOctetStream
+        content.Headers.ContentType <- MediaTypeHeaderValue(mediaType)
+        content :> HttpContent
+
+    let ofKeyValuePairs keyValuePairs =
+        let keyValuePairs = List.map (fun ((Key key), (Value value)) -> KeyValuePair<string, string>(key, value)) keyValuePairs
+        new FormUrlEncodedContent(keyValuePairs) :> HttpContent
+
+    let ofStream mediaType stream =
+        let content = new StreamContent(stream)
+        content.Headers.ContentType <- MediaTypeHeaderValue(MediaType.toString mediaType)
+        content :> HttpContent
+
+    let ofRequestContent = function
+        | StringContent (mediaType, text) ->
+            ofString mediaType text
 
         | ByteArrayContent bytes ->
-            let content = new ByteArrayContent(bytes) :> HttpContent
-            let mediaType = MediaType.toString MediaType.applicationOctetStream
-            content.Headers.ContentType <- Headers.MediaTypeHeaderValue(mediaType)
-            content
+            ofBytes bytes
 
         | FormUrlEncodedContent keyValuePairs ->
-            let keyValuePairs = List.map (fun ((Key key), (Value value)) -> KeyValuePair<string, string>(key, value)) keyValuePairs
-            new FormUrlEncodedContent(keyValuePairs) :> HttpContent
-
-module HttpMethod =
-
-    let patch = HttpMethod("PATCH")
+            ofKeyValuePairs keyValuePairs
 
 module Request =
 
@@ -112,7 +127,7 @@ module Request =
     let applyContent content (request: HttpRequestMessage) =
         match content with
         | Some content ->
-            request.Content <- RequestContent.toHttpContent content
+            request.Content <- HttpContent.ofRequestContent content
         | None ->
             ()
         request
