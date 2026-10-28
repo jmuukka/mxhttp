@@ -25,7 +25,7 @@ module Http =
                 try
                     let! httpResponseMessage =
                         request
-                        |> Request.toHttpRequestMessage
+                        |> HttpRequestMessage.ofRequest
                         |> httpSend cancellationToken
 
                     return Ok httpResponseMessage
@@ -48,7 +48,7 @@ module Http =
                     let! cancellationToken = Async.CancellationToken
                     let! httpResponseMessage =
                         request
-                        |> Request.toHttpRequestMessage
+                        |> HttpRequestMessage.ofRequest
                         |> httpSend cancellationToken
                         |> Async.AwaitTask
 

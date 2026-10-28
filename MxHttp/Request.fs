@@ -107,11 +107,11 @@ module Request =
             Content = None
         }
 
-    // ---------------
+module HttpRequestMessage =
 
     // Request -> HttpRequestMessage
-    let ofHttpRequestMessage request =
-        new HttpRequestMessage(request.Method, Uri.toSystemUri request.ResourceUri)
+    let ofHttpRequestMessage httpMethod resourceUri =
+        new HttpRequestMessage(httpMethod, Uri.toSystemUri resourceUri)
 
     // (Key * Value seq) list -> HttpRequestMessage -> HttpRequestMessage
     let applyHeaders headers (request: HttpRequestMessage) =
@@ -123,6 +123,11 @@ module Request =
         List.iter applyHeader headers
         request
 
+    // HttpContent -> HttpRequestMessage -> HttpRequestMessage
+    let applyHttpContent httpContent (request: HttpRequestMessage) =
+        request.Content <- httpContent
+        request
+
     // RequestContent option -> HttpRequestMessage -> HttpRequestMessage
     let applyContent content (request: HttpRequestMessage) =
         match content with
@@ -132,8 +137,12 @@ module Request =
             ()
         request
 
-    // Request -> HttpRequestMessage
-    let toHttpRequestMessage request =
-        ofHttpRequestMessage request
+    let ofHttpContent httpMethod (headers: Header list) resourceUri httpContent =
+        ofHttpRequestMessage httpMethod resourceUri
+        |> applyHeaders headers
+        |> applyHttpContent httpContent
+
+    let ofRequest request =
+        ofHttpRequestMessage request.Method request.ResourceUri
         |> applyHeaders request.Headers
         |> applyContent request.Content

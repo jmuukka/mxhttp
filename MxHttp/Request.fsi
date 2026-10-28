@@ -17,7 +17,7 @@ and RequestContent =
 module HttpMethod =
 
     val patch: HttpMethod
-
+    
     //val query: HttpMethod
 
 module RequestContent =
@@ -54,12 +54,8 @@ module Request =
 
     val delete: Header list -> Uri -> Request
 
-    val toHttpRequestMessage: Request -> HttpRequestMessage
+module HttpRequestMessage =
 
-module RequestContent =
+    val ofHttpContent: HttpMethod -> Header list -> Uri -> HttpContent -> HttpRequestMessage
 
-    val string: ('a -> string) -> MediaType -> 'a -> RequestContent
-
-    val byteArray: byte array -> RequestContent
-
-    val formUrlEncoded: (string * string) list -> RequestContent
+    val ofRequest: Request -> HttpRequestMessage

@@ -25,6 +25,7 @@
     <Compile Include="Header Tests.fs" />
     <Compile Include="RequestContent Tests.fs" />
     <Compile Include="Request Tests.fs" />
+    <Compile Include="HttpRequestMessage Tests.fs" />
     <Compile Include="Response Task Tests.fs" />
     <Compile Include="Response Async Tests.fs" />
     <Compile Include="Response Parse Tests.fs" />
