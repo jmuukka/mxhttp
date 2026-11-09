@@ -1,31 +1,33 @@
 ﻿namespace MxHttp
 
+open System.IO
 open System.Net
 open System.Net.Http
 open System.Threading.Tasks
 
+/// The Response to the Request.
 type [<NoComparison>] Response = {
+    /// The HTTP Status Code of the response.
     StatusCode: HttpStatusCode
+    /// The response headers.
     Headers: Header list
+    /// The response content when there is one.
     Content: ResponseContent option
+    /// The Request which was sent to the HTTP server.
     Request: Request
 }
+/// The response content.
 and ResponseContent = {
+    /// The response content headers.
     Headers: Header list
-    Data: ResponseContentData
+    /// The actual data of the response content.
+    Content: Content
 }
-and ResponseContentData =
-| StringResponseContent of string
-| ByteArrayResponseContent of byte array
-
-type Deserializer<'a> = string -> 'a
 
 [<NoComparison>]
 type ResponseError =
 | ResponseContentException of Request * HttpResponseMessage * exn
 | NonSuccessHttpStatusCode of Response
-| ParseError of Response * string
-| DeserializeException of Response * exn
 
 module Response =
 
@@ -36,5 +38,3 @@ module Response =
     module Async =
 
         val ofHttpResponseMessage: Request -> HttpResponseMessage -> Async<Result<Response, ResponseError>>
-
-    val parse<'a>: Map<MediaType, Deserializer<'a>> -> Response -> Result<'a, ResponseError>

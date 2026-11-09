@@ -4,28 +4,22 @@ open System.Threading
 open System.Threading.Tasks
 open System.Net.Http
 
-[<Measure>]
-type ms
-
-type Timeout = int<ms>
-
-type HttpSend = CancellationToken -> HttpRequestMessage -> Task<HttpResponseMessage>
-
 [<NoComparison>]
 type HttpError =
 | RequestException of Request * exn
 | ResponseError of ResponseError
+| ParseError of ParseError
 
 module Http =
 
     module Task =
 
-        let sendRequest (httpSend: HttpSend) cancellationToken request =
+        let sendRequest : HttpSendTask -> CancellationToken -> Request -> Task<Result<HttpResponseMessage, HttpError>> = fun httpSend cancellationToken request ->
             backgroundTask {
                 try
                     let! httpResponseMessage =
                         request
-                        |> HttpRequestMessage.ofRequest
+                        |> Request.toHttpRequestMessage
                         |> httpSend cancellationToken
 
                     return Ok httpResponseMessage
@@ -36,21 +30,19 @@ module Http =
                         |> Error
             }
 
-        let send httpSend cancellationToken request =
+        let send : HttpSendTask -> CancellationToken -> Request -> Task<Result<Response, HttpError>> = fun httpSend cancellationToken request ->
             sendRequest httpSend cancellationToken request
             |> TaskResult.bind (Response.Task.ofHttpResponseMessage request >> TaskResult.mapError ResponseError)
 
     module Async =
 
-        let sendRequest (httpSend: HttpSend) request =
+        let sendRequest : HttpSendAsync -> Request -> Async<Result<HttpResponseMessage, HttpError>> = fun httpSend request ->
             async {
                 try
-                    let! cancellationToken = Async.CancellationToken
                     let! httpResponseMessage =
                         request
-                        |> HttpRequestMessage.ofRequest
-                        |> httpSend cancellationToken
-                        |> Async.AwaitTask
+                        |> Request.toHttpRequestMessage
+                        |> httpSend
 
                     return Ok httpResponseMessage
                 with ex ->
@@ -60,13 +52,6 @@ module Http =
                         |> Error
             }
 
-        let send httpSend request =
+        let send : HttpSendAsync -> Request -> Async<Result<Response, HttpError>> = fun httpSend request ->
             sendRequest httpSend request
             |> AsyncResult.bind (Response.Async.ofHttpResponseMessage request >> AsyncResult.mapError ResponseError)
-
-    //module Sync =
-
-    //    let send httpSend timeout cancellationToken request =
-    //        let computation = Async.send httpSend request
-
-    //        Async.RunSynchronously (computation, timeout / 1<ms>, cancellationToken)

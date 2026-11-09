@@ -7,6 +7,7 @@ open System.Text
 open System.Threading
 open System.Threading.Tasks
 open Xunit
+open MxHttp
 
 let responseMessage statusCode =
     new HttpResponseMessage(statusCode)
@@ -46,7 +47,7 @@ let ``given a Request with Content when send then returns correct Response`` () 
     use cancellationTokenSource = new CancellationTokenSource()
     let request =
         { Name = "Any" }
-        |> RequestContent.string Json.serialize MediaType.applicationJson
+        |> Content.string Json.serialize MediaType.applicationJson
         |> Request.post [Header.acceptJson] (Uri.absolute "http://localhost/api/customers")
     let expectedResponseObject = { Id = Guid.NewGuid(); Name = "added" }
     let expectedJson = Json.serialize expectedResponseObject
@@ -55,7 +56,7 @@ let ``given a Request with Content when send then returns correct Response`` () 
             Key.ofString "Content-Type", [Value.ofString "application/json; charset=utf-8"]
             Key.ofString "Content-Length", [Value.ofString (string expectedJson.Length)]
         ]
-        Data = StringResponseContent expectedJson
+        Content = StringContent (MediaType.applicationJson, expectedJson)
     }
     let httpSend cancellationToken httpRequestMessage =
         Assert.Equal(cancellationTokenSource.Token, cancellationToken)

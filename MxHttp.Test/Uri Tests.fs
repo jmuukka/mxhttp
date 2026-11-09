@@ -51,18 +51,18 @@ let ``given an invalid absolute URI when tryOfString then returns None`` () =
     | Some u -> failwith "AbsoluteUri.tryOfString should not have succeeded for invalid URI"
     | None -> ()
 
-[<Theory>]
-[<InlineData("http://localhost", "api", "http://localhost/api")>]
-[<InlineData("http://localhost/", "/api", "http://localhost/api")>]
-[<InlineData("http://localhost/", "api", "http://localhost/api")>]
-[<InlineData("http://localhost", "/api", "http://localhost/api")>]
-let ``given an absolute URI and a relative URI when concat then returns concatenated URI`` left right expected =
-    let left = AbsoluteUri.ofString left
-    let right = RelativeUri.ofString right
+//[<Theory>]
+//[<InlineData("http://localhost", "api", "http://localhost/api")>]
+//[<InlineData("http://localhost/", "/api", "http://localhost/api")>]
+//[<InlineData("http://localhost/", "api", "http://localhost/api")>]
+//[<InlineData("http://localhost", "/api", "http://localhost/api")>]
+//let ``given an absolute URI and a relative URI when concat then returns concatenated URI`` left right expected =
+//    let left = AbsoluteUri.ofString left
+//    let right = RelativeUri.ofString right
 
-    let actual = AbsoluteUri.concat left right
+//    let actual = AbsoluteUri.concat left right
 
-    Assert.Equal(expected, AbsoluteUri.toString actual)
+//    Assert.Equal(expected, AbsoluteUri.toString actual)
 
 (******************** RelativeUri ********************)
 
@@ -112,18 +112,18 @@ let ``given an invalid relative URI when tryOfString then returns None`` () =
     | Some _ -> failwith "RelativeUri.tryOfString should not have succeeded for invalid URI"
     | None -> ()
 
-[<Theory>]
-[<InlineData("api", "customers", "api/customers")>]
-[<InlineData("api/", "/customers", "api/customers")>]
-[<InlineData("api/", "customers", "api/customers")>]
-[<InlineData("api", "/customers", "api/customers")>]
-let ``given two relative URIs when concat then returns concatenated URI`` left right expected =
-    let left = RelativeUri.ofString left
-    let right = RelativeUri.ofString right
+//[<Theory>]
+//[<InlineData("api", "customers", "api/customers")>]
+//[<InlineData("api/", "/customers", "api/customers")>]
+//[<InlineData("api/", "customers", "api/customers")>]
+//[<InlineData("api", "/customers", "api/customers")>]
+//let ``given two relative URIs when concat then returns concatenated URI`` left right expected =
+//    let left = RelativeUri.ofString left
+//    let right = RelativeUri.ofString right
 
-    let actual = RelativeUri.concat left right
+//    let actual = RelativeUri.concat left right
 
-    Assert.Equal(expected, RelativeUri.toString actual)
+//    Assert.Equal(expected, RelativeUri.toString actual)
 
 (******************** Uri ********************)
 

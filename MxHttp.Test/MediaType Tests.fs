@@ -33,3 +33,17 @@ let ``given string when ofString then toString returns correct media type`` () =
     let actual = MediaType.ofString mediaType
 
     Assert.Equal(mediaType, MediaType.toString actual)
+
+[<Fact>]
+let ``given same MediaTypes when equals then returns true`` () =
+    Assert.True(MediaType.equals MediaType.applicationFormUrlEncoded MediaType.applicationFormUrlEncoded)
+
+[<Fact>]
+let ``given same MediaTypes but in different case when equals then returns true`` () =
+    let differentCaseMediaType = MediaType.ofString "Application/XML"
+    Assert.True(MediaType.equals differentCaseMediaType MediaType.applicationXml)
+
+[<Fact>]
+let ``given different MediaTypes when equals then returns false`` () =
+    let differentMediaType = MediaType.ofString "application/xml " // Notice a space.
+    Assert.False(MediaType.equals differentMediaType MediaType.applicationXml)

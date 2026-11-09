@@ -3,6 +3,7 @@
 open System
 open System.Text
 open MxHttp
+open System.Collections.Generic
 
 type Key = private Key of string
 type Value = private Value of string
@@ -22,10 +23,16 @@ module Value =
 
 module Header =
 
-    let authorization (tokenType: string) (accessToken: string) =
-        let key = Key "Authorization"
-        let value = Value $"{tokenType} {accessToken}"
-        key, [value]
+    let multipleValues : string -> string list -> Header = fun key values ->
+        let key = Key key
+        key, List.map Value values
+
+    let singleValue : string -> string -> Header = fun key value ->
+        multipleValues key [value]
+
+    let authorization : string -> string -> Header = fun tokenType accessToken ->
+        let value = $"{tokenType} {accessToken}"
+        singleValue "Authorization" value
 
     let basicAuthorization (username, password) =
         sprintf "%s:%s" username password
@@ -37,12 +44,17 @@ module Header =
         authorization "Bearer" accessToken
 
     let accept (MediaType mediaType) =
-        let key = Key "Accept"
-        let value = Value mediaType
-        key, [value]
+        singleValue "Accept" mediaType
 
     let acceptJson =
         accept MediaType.applicationJson
 
     let acceptXml =
         accept MediaType.applicationXml
+
+    let private toHeader : KeyValuePair<string, string seq> -> Header = fun kvp ->
+        Key kvp.Key, Seq.map Value kvp.Value |> List.ofSeq
+
+    let ofHttpHeaders : KeyValuePair<string, string seq> seq -> Header list = fun headers ->
+        Seq.map toHeader headers
+        |> List.ofSeq

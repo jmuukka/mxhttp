@@ -29,11 +29,24 @@
     <Compile Include="MediaType.fs" />
     <Compile Include="Uri.fs" />
     <Compile Include="Header.fs" />
+    <Compile Include="HttpHeader.fs" />
+    <Compile Include="HttpContent.fsi" />
+    <Compile Include="HttpContent.fs" />
+    <Compile Include="Content.fsi" />
+    <Compile Include="Content.fs" />
+    <Compile Include="HttpRequestMessage.fsi" />
+    <Compile Include="HttpRequestMessage.fs" />
     <Compile Include="Request.fsi" />
     <Compile Include="Request.fs" />
     <Compile Include="Private.fs" />
+    <Compile Include="HttpResponseContent.fsi" />
+    <Compile Include="HttpResponseContent.fs" />
+    <Compile Include="HttpResponseMessage.fsi" />
+    <Compile Include="HttpResponseMessage.fs" />
     <Compile Include="Response.fsi" />
     <Compile Include="Response.fs" />
+    <Compile Include="HttpClient.fsi" />
+    <Compile Include="HttpClient.fs" />
     <Compile Include="Http.fsi" />
     <Compile Include="Http.fs" />
   </ItemGroup>

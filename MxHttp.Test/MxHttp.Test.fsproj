@@ -20,18 +20,26 @@
 
   <ItemGroup>
     <Compile Include="TestCore.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="MediaType Tests.fs" />
     <Compile Include="Uri Tests.fs" />
     <Compile Include="Header Tests.fs" />
-    <Compile Include="RequestContent Tests.fs" />
-    <Compile Include="Request Tests.fs" />
+    <Compile Include="HttpHeader Tests.fs" />
+    <Compile Include="HttpContent Tests.fs" />
+    <Compile Include="Content Tests.fs" />
     <Compile Include="HttpRequestMessage Tests.fs" />
+    <Compile Include="Request Tests.fs" />
+    <Compile Include="HttpResponseContent Task Tests.fs" />
+    <Compile Include="HttpResponseContent Async Tests.fs" />
+    <Compile Include="HttpResponseMessage Tests.fs" />
     <Compile Include="Response Task Tests.fs" />
     <Compile Include="Response Async Tests.fs" />
-    <Compile Include="Response Parse Tests.fs" />
+    <Compile Include="HttpClient Task Tests.fs" />
+    <Compile Include="HttpClient Async Tests.fs" />
+    <Compile Include="Task Pipeline Tests.fs" />
+    <Compile Include="Async Pipeline Tests.fs" />
     <Compile Include="Http Task Tests.fs" />
     <Compile Include="Http Async Tests.fs" />
-    <Compile Include="Http Tests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

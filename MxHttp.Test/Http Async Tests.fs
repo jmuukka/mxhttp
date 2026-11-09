@@ -7,6 +7,7 @@ open System.Text
 open System.Threading
 open System.Threading.Tasks
 open Xunit
+open MxHttp
 
 let responseMessage statusCode =
     new HttpResponseMessage(statusCode)
@@ -20,20 +21,16 @@ let withJsonStringContent content (responseMessage: HttpResponseMessage) =
 
 [<Fact>]
 let ``given a Request without Content when send then returns correct Response`` () =
-    use cancellationTokenSource = new CancellationTokenSource()
     let request = Request.delete [] (Uri.absolute "http://localhost/api/customers/123456789")
-    let httpSend cancellationToken httpRequestMessage =
-        Assert.Equal(cancellationTokenSource.Token, cancellationToken)
+    let httpSend httpRequestMessage =
         Assert.sameRequest request httpRequestMessage
 
-        cancellationToken.ThrowIfCancellationRequested()
-
         responseMessage HttpStatusCode.NoContent
-        |> Task.fromResult
+        |> async.Return
 
     request
     |> Http.Async.send httpSend
-    |> Async.run cancellationTokenSource.Token
+    |> Async.run
     |> Assert.okWith (fun response ->
         Assert.Equal(request, response.Request)
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode)
@@ -43,10 +40,9 @@ let ``given a Request without Content when send then returns correct Response`` 
 
 [<Fact>]
 let ``given a Request with Content when send then returns correct Response`` () =
-    use cancellationTokenSource = new CancellationTokenSource()
     let request =
         { Name = "Any" }
-        |> RequestContent.string Json.serialize MediaType.applicationJson
+        |> Content.string Json.serialize MediaType.applicationJson
         |> Request.post [Header.acceptJson] (Uri.absolute "http://localhost/api/customers")
     let expectedResponseObject = { Id = Guid.NewGuid(); Name = "added" }
     let expectedJson = Json.serialize expectedResponseObject
@@ -55,21 +51,18 @@ let ``given a Request with Content when send then returns correct Response`` () 
             Key.ofString "Content-Type", [Value.ofString "application/json; charset=utf-8"]
             Key.ofString "Content-Length", [Value.ofString (string expectedJson.Length)]
         ]
-        Data = StringResponseContent expectedJson
+        Content = StringContent (MediaType.applicationJson, expectedJson)
     }
-    let httpSend cancellationToken httpRequestMessage =
-        Assert.Equal(cancellationTokenSource.Token, cancellationToken)
+    let httpSend httpRequestMessage =
         Assert.sameRequest request httpRequestMessage
-
-        cancellationToken.ThrowIfCancellationRequested()
 
         responseMessage HttpStatusCode.OK
         |> withJsonStringContent expectedResponseObject
-        |> Task.fromResult
+        |> async.Return
 
     request
     |> Http.Async.send httpSend
-    |> Async.run cancellationTokenSource.Token
+    |> Async.run
     |> Assert.okWith (fun response ->
         Assert.Equal(request, response.Request)
         Assert.Equal(HttpStatusCode.OK, response.StatusCode)
@@ -78,18 +71,14 @@ let ``given a Request with Content when send then returns correct Response`` () 
     )
 
 [<Fact>]
-let ``given a Request when send throws TaskCanceledException then returns correct Error`` () =
-    use cancellationTokenSource = new CancellationTokenSource()
+let ``given a Request when send throws an exception then returns correct Error`` () =
     let request = Request.delete [] (Uri.absolute "http://localhost/api/customers/123456789")
-    let httpSend cancellationToken httpRequestMessage =
-        Assert.Equal(cancellationTokenSource.Token, cancellationToken)
+    let httpSend httpRequestMessage =
         Assert.sameRequest request httpRequestMessage
-
-        cancellationToken.ThrowIfCancellationRequested()
 
         raise (TaskCanceledException())
 
     request
     |> Http.Async.send httpSend
-    |> Async.run cancellationTokenSource.Token
+    |> Async.run
     |> Assert.requestException<TaskCanceledException>

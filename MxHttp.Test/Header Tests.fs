@@ -60,3 +60,18 @@ let ``when authorization then returns correct header`` () =
     let actual = Header.authorization tokenType accessToken
 
     Assert.Equal((Key.ofString "Authorization", [Value.ofString $"Custom token"]), actual)
+
+[<Fact>]
+let ``given key and value map when ofHttpHeaders then returns Key Value list`` () =
+    let headers =
+        Map.empty
+            .Add("k1", seq { "v1"; "v2" })
+            .Add("k2", seq { })
+    let expected = [
+        Key.ofString "k1", [Value.ofString "v1"; Value.ofString "v2"]
+        Key.ofString "k2", []
+    ]
+
+    let actual = Header.ofHttpHeaders headers
+
+    Assert.Equal<(Key * Value list) list>(expected, actual)

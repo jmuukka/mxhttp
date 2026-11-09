@@ -5,6 +5,7 @@ open System.Net
 open System.Net.Http
 open System.Text
 open Xunit
+open MxHttp
 
 [<Fact>]
 let ``given an OK HttpResponseMessage with empty content when ofHttpResponseMessage then returns Ok response with expected data`` () =
@@ -30,7 +31,7 @@ let ``given an OK HttpResponseMessage with empty plain text when ofHttpResponseM
     ]
     let expectedResponseContent = {
         Headers = expectedContentHeaders
-        Data = StringResponseContent ""
+        Content = StringContent (MediaType.ofString "text/plain", "")
     }
 
     Response.Task.ofHttpResponseMessage request responseMessage
@@ -53,7 +54,7 @@ let ``given an OK HttpResponseMessage with empty octet-stream without Content-Le
     ]
     let expectedResponseContent = {
         Headers = expectedContentHeaders
-        Data = ByteArrayResponseContent [||]
+        Content = ByteArrayContent [||]
     }
 
     Response.Task.ofHttpResponseMessage request responseMessage
@@ -72,7 +73,7 @@ let ``given an OK HttpResponseMessage with one byte without Content-Type when of
     responseMessage.Content <- new ByteArrayContent([|1uy|])
     let expectedResponseContent = {
         Headers = []
-        Data = ByteArrayResponseContent [|1uy|]
+        Content = ByteArrayContent [|1uy|]
     }
 
     Response.Task.ofHttpResponseMessage request responseMessage
@@ -104,7 +105,7 @@ let ``given an OK HttpResponseMessage with JSON string when ofHttpResponseMessag
     ]
     let expectedResponseContent = {
         Headers = expectedContentHeaders
-        Data = StringResponseContent json
+        Content = StringContent (MediaType.applicationJson, json)
     }
 
     Response.Task.ofHttpResponseMessage request responseMessage
@@ -130,7 +131,7 @@ let ``given an OK HttpResponseMessage with byte array and content type when ofHt
     ]
     let expectedResponseContent = {
         Headers = expectedContentHeaders
-        Data = ByteArrayResponseContent bytes
+        Content = ByteArrayContent bytes
     }
 
     Response.Task.ofHttpResponseMessage request responseMessage
@@ -160,7 +161,7 @@ let ``given a Bad Request HttpResponseMessage when ofHttpResponseMessage then re
         Assert.Equal<Header list>([], response.Headers)
         Assert.Equal<ResponseContent option>(Some {
             Headers = expectedContentHeaders
-            Data = StringResponseContent json }, response.Content)
+            Content = StringContent (MediaType.applicationJson, json) }, response.Content)
     )
 
 [<Fact>]

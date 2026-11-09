@@ -15,3 +15,6 @@ module MediaType =
     let ofString s = MediaType s
 
     let toString (MediaType mediaType) = mediaType
+
+    let equals (MediaType mediaType1) (MediaType mediaType2) =
+        System.String.Equals(mediaType1, mediaType2, System.StringComparison.OrdinalIgnoreCase)

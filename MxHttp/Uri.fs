@@ -2,22 +2,22 @@
 
 open System
 
-module private Uri' =
+//module private Uri' =
 
-    let concat (left: Uri) (right: Uri) =
-        let left = left.ToString()
-        let right = right.ToString()
+//    let concat (left: Uri) (right: Uri) =
+//        let left = left.ToString()
+//        let right = right.ToString()
 
-        if left.EndsWith "/" then
-            if right.StartsWith "/" then
-                left + right.Substring(1)
-            else
-                left + right
-        else
-            if right.StartsWith "/" then
-                left + right
-            else
-                left + "/" + right
+//        if left.EndsWith "/" then
+//            if right.StartsWith "/" then
+//                left + right.Substring(1)
+//            else
+//                left + right
+//        else
+//            if right.StartsWith "/" then
+//                left + right
+//            else
+//                left + "/" + right
 
 type [<NoComparison>] RelativeUri = private RelativeUri of Uri
 
@@ -38,9 +38,9 @@ module RelativeUri =
 
     let toString uri = (toSystemUri uri).ToString()
 
-    let concat (RelativeUri left) (RelativeUri right) =
-        Uri'.concat left right
-        |> ofString
+    //let concat (RelativeUri left) (RelativeUri right) =
+    //    Uri'.concat left right
+    //    |> ofString
 
 type [<NoComparison>] AbsoluteUri = private AbsoluteUri of Uri
 
@@ -61,9 +61,9 @@ module AbsoluteUri =
 
     let toString uri = (toSystemUri uri).ToString()
 
-    let concat (AbsoluteUri left) (RelativeUri right) =
-        Uri'.concat left right
-        |> ofString
+    //let concat (AbsoluteUri left) (RelativeUri right) =
+    //    Uri'.concat left right
+    //    |> ofString
 
 [<NoComparison>]
 [<RequireQualifiedAccess>]
