@@ -10,24 +10,22 @@ module private Uri' =
 
     module QueryPart =
 
-        let ofString (kvp: string) =
+        let ofString : string -> QueryPart = fun kvp ->
             let index = kvp.IndexOf('=')
             if index >= 0 then
                 WithValue (kvp.Substring(0, index), kvp.Substring(index + 1))
             else
                 WithoutValue kvp
 
-        let toString = function
+        let toString : QueryPart -> string = function
             | WithValue (key, value) -> key + "=" + value
             | WithoutValue key -> key
 
     let parseQueryString : string -> QueryPart array = fun queryString ->
-        let queryString = if queryString.StartsWith "?" then queryString.Substring(1) else queryString
-
         queryString.Split([|'&'|], StringSplitOptions.RemoveEmptyEntries)
         |> Array.map QueryPart.ofString
 
-    let concatQueryStrings leftQueryStrings rightQueryStrings =
+    let concatQueryStrings : QueryPart array -> QueryPart array -> string = fun leftQueryStrings rightQueryStrings ->
         Array.append leftQueryStrings rightQueryStrings
         |> Array.map QueryPart.toString
         |> String.concat "&"
@@ -44,27 +42,31 @@ module private Uri' =
             else
                 leftPath + "/" + rightPath
 
+    let splitIntoPathAndQuery : Uri -> string * string = fun uri ->
+        let rightPath = uri.OriginalString
+        let index = rightPath.IndexOf('?')
+        if index >= 0 then
+            rightPath.Substring(0, index), rightPath.Substring(index + 1)
+        else
+            rightPath, ""
+
+    let concatPathAndQuery : string -> string -> string = fun path query ->
+        if String.length query = 0 then
+            path
+        else
+            path + "?" + query
+
     let concat : Uri -> Uri -> string = fun absoluteUri relativeUri ->
-        let leftPath = absoluteUri.GetLeftPart(UriPartial.Path)
-        let leftQueryStrings = parseQueryString absoluteUri.Query
-        let rightPath = relativeUri.OriginalString
-        let rightPath, rightQuery =
-            let rightPath = relativeUri.OriginalString
-            let index = rightPath.IndexOf('?')
-            if index >= 0 then
-                rightPath.Substring(0, index), rightPath.Substring(index + 1)
-            else
-                rightPath, ""
+        let leftPath, leftQuery = splitIntoPathAndQuery absoluteUri
+        let rightPath, rightQuery = splitIntoPathAndQuery relativeUri
+
+        let path = concatUriStrings leftPath rightPath
+
+        let leftQueryStrings = parseQueryString leftQuery
         let rightQueryStrings = parseQueryString rightQuery
-        let queryStrings = concatQueryStrings leftQueryStrings rightQueryStrings
+        let query = concatQueryStrings leftQueryStrings rightQueryStrings
 
-        let queryString =
-            if queryStrings.Length > 0 then
-                "?" + queryStrings
-            else
-                queryStrings
-
-        (concatUriStrings leftPath rightPath) + queryString
+        concatPathAndQuery path query
 
 type [<NoComparison>] RelativeUri = private RelativeUri of Uri
 
