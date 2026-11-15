@@ -35,6 +35,10 @@ module Response =
 
         val ofHttpResponseMessage: Request -> HttpResponseMessage -> Task<Result<Response, ResponseError>>
 
+        val parse<'a>: Map<MediaType, Deserializer<'a>> -> Response -> Task<Result<'a, ParseError>>
+
     module Async =
 
         val ofHttpResponseMessage: Request -> HttpResponseMessage -> Async<Result<Response, ResponseError>>
+
+        val parse<'a>: Map<MediaType, Deserializer<'a>> -> Response -> Async<Result<'a, ParseError>>

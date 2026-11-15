@@ -169,9 +169,41 @@ module Response =
             |> TaskResult.mapError (fun ex -> ResponseContentException (request, httpResponseMessage, ex))
             |> TaskResult.bind ((responseContentToResponse request httpResponseMessage) >> Task.retn)
 
+        let parse<'a> : Map<MediaType, Deserializer<'a>> -> Response -> Task<Result<'a, ParseError>> = fun deserializers response ->
+            match response.Content with
+            | None ->
+                let message = "Cannot parse response. The content is missing."
+                backgroundTask { return Error (ParseError message) }
+            | Some content ->
+                match content.Content with
+                | StringContent (mediaType, string) ->
+                    HttpResponseContent.Task.parse<'a> deserializers (HttpContent.ofString mediaType string)
+                | ByteArrayContent _ ->
+                    let message = "Cannot parse response. The content is a byte array."
+                    backgroundTask { return Error (ParseError message) }
+                | FormUrlEncodedContent _ ->
+                    let message = "Cannot parse response. The content is form URL encoded."
+                    backgroundTask { return Error (ParseError message) }
+
     module Async =
 
         let ofHttpResponseMessage : Request -> HttpResponseMessage -> Async<Result<Response, ResponseError>> = fun request httpResponseMessage ->
             Content.Async.tryReadResponseContent httpResponseMessage
             |> AsyncResult.mapError (fun ex -> ResponseContentException (request, httpResponseMessage, ex))
             |> AsyncResult.bind ((responseContentToResponse request httpResponseMessage) >> Async.retn)
+
+        let parse<'a> : Map<MediaType, Deserializer<'a>> -> Response -> Async<Result<'a, ParseError>> = fun deserializers response ->
+            match response.Content with
+            | None ->
+                let message = "Cannot parse response. The content is missing."
+                async { return Error (ParseError message) }
+            | Some content ->
+                match content.Content with
+                | StringContent (mediaType, string) ->
+                    HttpResponseContent.Async.parse<'a> deserializers (HttpContent.ofString mediaType string)
+                | ByteArrayContent _ ->
+                    let message = "Cannot parse response. The content is a byte array."
+                    async { return Error (ParseError message) }
+                | FormUrlEncodedContent _ ->
+                    let message = "Cannot parse response. The content is form URL encoded."
+                    async { return Error (ParseError message) }

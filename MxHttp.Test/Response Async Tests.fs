@@ -179,3 +179,99 @@ let ``given ofHttpResponseMessage throws when ofHttpResponseMessage then returns
             Assert.IsType<NullReferenceException>(ex)
         | _ -> failwithf "%A" error
     )
+
+[<Fact>]
+let ``given a JSON response when parse then expected object returned`` () =
+    let deserializers =
+        Map.empty.Add(MediaType.applicationJson, Json.deserialize)
+    let json = """{"Name":"Any"}"""
+    let expedtedCustomer = {
+        Id = Guid.Empty
+        Name = "Any"
+    }
+    let response = {
+        StatusCode = HttpStatusCode.OK
+        Headers = []
+        Content = Some {
+            Headers = [
+                Key.ofString "Content-Type", [Value.ofString "application/json; charset=utf-8"]
+                Key.ofString "Content-Length", [Value.ofString (string json.Length)]
+            ]
+            Content = StringContent (MediaType.applicationJson, json)
+        }
+        Request = Request.get [] (Uri.relative "any")
+    }
+
+    Response.Async.parse<CustomerResponse> deserializers response
+    |> Async.run
+    |> Assert.okWith (fun customer ->
+        Assert.Equal(expedtedCustomer, customer)
+    )
+
+[<Fact>]
+let ``given a response without content when parse then expected error returned`` () =
+    let response = {
+        StatusCode = HttpStatusCode.OK
+        Headers = []
+        Content = None
+        Request = Request.get [] (Uri.relative "any")
+    }
+
+    Response.Async.parse<CustomerResponse> Map.empty response
+    |> Async.run
+    |> Assert.errorWith (fun error ->
+        match error with
+        | ParseError errorText ->
+            Assert.Equal("Cannot parse response. The content is missing.", errorText)
+        | _ -> failwithf "%A" error
+    )
+
+[<Fact>]
+let ``given a byte array when parse then expected error returned`` () =
+    let deserializers =
+        Map.empty.Add(MediaType.applicationOctetStream, Json.deserialize)
+    let response = {
+        StatusCode = HttpStatusCode.OK
+        Headers = []
+        Content = Some {
+            Headers = [
+                (Key.ofString "Content-Type", [Value.ofString "application/octet-stream"])
+            ]
+            Content = ByteArrayContent [|255uy|]
+        }
+        Request = Request.get [] (Uri.relative "any")
+    }
+
+    Response.Async.parse<CustomerResponse> deserializers response
+    |> Async.run
+    |> Assert.errorWith (fun error ->
+        match error with
+        | ParseError errorText ->
+            Assert.Equal("Cannot parse response. The content is a byte array.", errorText)
+        | _ -> failwithf "%A" error
+    )
+
+[<Fact>]
+let ``given a Form URL encoded content when parse then expected error returned`` () =
+    let deserializers =
+        Map.empty.Add(MediaType.applicationFormUrlEncoded, Json.deserialize)
+    let response = {
+        StatusCode = HttpStatusCode.OK
+        Headers = []
+        Content = Some {
+            Headers = [
+                (Key.ofString "Content-Type", [Value.ofString "application/x-www-form-urlencoded"])
+            ]
+            Content = FormUrlEncodedContent [(Key.ofString "key", Value.ofString "value")]
+        }
+        Request = Request.get [] (Uri.relative "any")
+    }
+
+    Response.Async.parse<CustomerResponse> deserializers response
+    |> Async.run
+    |> Assert.errorWith (fun error ->
+        match error with
+        | ParseError errorText ->
+            Assert.Equal("Cannot parse response. The content is form URL encoded.", errorText)
+        | _ -> failwithf "%A" error
+    )
