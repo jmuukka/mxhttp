@@ -56,8 +56,8 @@ module private Uri' =
         else
             path + "?" + query
 
-    let concat : Uri -> Uri -> string = fun absoluteUri relativeUri ->
-        let leftPath, leftQuery = splitIntoPathAndQuery absoluteUri
+    let concat : Uri -> Uri -> string = fun absoluteOrRelativeUri relativeUri ->
+        let leftPath, leftQuery = splitIntoPathAndQuery absoluteOrRelativeUri
         let rightPath, rightQuery = splitIntoPathAndQuery relativeUri
 
         let path = concatUriStrings leftPath rightPath
@@ -86,6 +86,10 @@ module RelativeUri =
     let toSystemUri (RelativeUri uri) = uri
 
     let toString uri = (toSystemUri uri).OriginalString
+
+    let concat (RelativeUri left) (RelativeUri right) =
+        Uri'.concat left right
+        |> ofString
 
 type [<NoComparison>] AbsoluteUri = private AbsoluteUri of Uri
 

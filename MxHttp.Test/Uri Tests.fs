@@ -117,6 +117,24 @@ let ``given an invalid relative URI when tryOfString then returns None`` () =
     | Some _ -> failwith "RelativeUri.tryOfString should not have succeeded for invalid URI"
     | None -> ()
 
+[<Theory>]
+[<InlineData("api", "customers", "api/customers")>]
+[<InlineData("api/", "/customers", "api/customers")>]
+[<InlineData("api/", "customers", "api/customers")>]
+[<InlineData("api", "/customers", "api/customers")>]
+[<InlineData("api", "/customers?p=1", "api/customers?p=1")>]
+[<InlineData("api?p=1", "customers", "api/customers?p=1")>]
+[<InlineData("api?p1=1", "/customers?p2=a", "api/customers?p1=1&p2=a")>]
+[<InlineData("api?p1=1", "/customers?p1=a", "api/customers?p1=1&p1=a")>]
+[<InlineData("api?p1", "/customers?p2", "api/customers?p1&p2")>]
+let ``given two relative URIs when concat then returns concatenated URI`` left right expected =
+    let left = RelativeUri.ofString left
+    let right = RelativeUri.ofString right
+
+    let actual = RelativeUri.concat left right
+
+    Assert.Equal(expected, RelativeUri.toString actual)
+
 (******************** Uri ********************)
 
 [<Fact>]
