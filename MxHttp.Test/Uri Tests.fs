@@ -11,7 +11,7 @@ let ``given a valid absolute URI when ofString then toString equals with an orig
 
     let actual = AbsoluteUri.ofString uri
 
-    Assert.Equal(uri + "/", AbsoluteUri.toString actual)
+    Assert.Equal(uri, AbsoluteUri.toString actual)
 
 [<Fact>]
 let ``given a valid absolute URI when ofString then toSystemUri equals with an original string`` () =
@@ -40,7 +40,7 @@ let ``given a valid absolute URI when tryOfString then returns Some absolute URI
     let uri = "http://localhost"
 
     match AbsoluteUri.tryOfString uri with
-    | Some actual -> Assert.Equal(uri + "/", AbsoluteUri.toString actual)
+    | Some actual -> Assert.Equal(uri, AbsoluteUri.toString actual)
     | None -> failwith "AbsoluteUri.tryOfString should have succeeded for valid URI"
 
 [<Fact>]
@@ -51,18 +51,23 @@ let ``given an invalid absolute URI when tryOfString then returns None`` () =
     | Some u -> failwith "AbsoluteUri.tryOfString should not have succeeded for invalid URI"
     | None -> ()
 
-//[<Theory>]
-//[<InlineData("http://localhost", "api", "http://localhost/api")>]
-//[<InlineData("http://localhost/", "/api", "http://localhost/api")>]
-//[<InlineData("http://localhost/", "api", "http://localhost/api")>]
-//[<InlineData("http://localhost", "/api", "http://localhost/api")>]
-//let ``given an absolute URI and a relative URI when concat then returns concatenated URI`` left right expected =
-//    let left = AbsoluteUri.ofString left
-//    let right = RelativeUri.ofString right
+[<Theory>]
+[<InlineData("http://localhost", "api", "http://localhost/api")>]
+[<InlineData("http://localhost/", "/api", "http://localhost/api")>]
+[<InlineData("http://localhost/", "api", "http://localhost/api")>]
+[<InlineData("http://localhost", "/api", "http://localhost/api")>]
+[<InlineData("http://localhost", "/api?p=1", "http://localhost/api?p=1")>]
+[<InlineData("http://localhost?p=1", "/api", "http://localhost/api?p=1")>]
+[<InlineData("http://localhost?p1=1", "/api?p2=a", "http://localhost/api?p1=1&p2=a")>]
+[<InlineData("http://localhost?p1=1", "/api?p1=a", "http://localhost/api?p1=1&p1=a")>]
+[<InlineData("http://localhost?p1", "/api?p2", "http://localhost/api?p1&p2")>]
+let ``given an absolute URI and a relative URI when concat then returns concatenated URI`` left right expected =
+    let left = AbsoluteUri.ofString left
+    let right = RelativeUri.ofString right
 
-//    let actual = AbsoluteUri.concat left right
+    let actual = AbsoluteUri.concat left right
 
-//    Assert.Equal(expected, AbsoluteUri.toString actual)
+    Assert.Equal(expected, AbsoluteUri.toString actual)
 
 (******************** RelativeUri ********************)
 
@@ -111,19 +116,6 @@ let ``given an invalid relative URI when tryOfString then returns None`` () =
     match RelativeUri.tryOfString uri with
     | Some _ -> failwith "RelativeUri.tryOfString should not have succeeded for invalid URI"
     | None -> ()
-
-//[<Theory>]
-//[<InlineData("api", "customers", "api/customers")>]
-//[<InlineData("api/", "/customers", "api/customers")>]
-//[<InlineData("api/", "customers", "api/customers")>]
-//[<InlineData("api", "/customers", "api/customers")>]
-//let ``given two relative URIs when concat then returns concatenated URI`` left right expected =
-//    let left = RelativeUri.ofString left
-//    let right = RelativeUri.ofString right
-
-//    let actual = RelativeUri.concat left right
-
-//    Assert.Equal(expected, RelativeUri.toString actual)
 
 (******************** Uri ********************)
 

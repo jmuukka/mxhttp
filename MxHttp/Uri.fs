@@ -2,22 +2,69 @@
 
 open System
 
-//module private Uri' =
+module private Uri' =
 
-//    let concat (left: Uri) (right: Uri) =
-//        let left = left.ToString()
-//        let right = right.ToString()
+    type QueryPart =
+    | WithValue of string * string
+    | WithoutValue of string
 
-//        if left.EndsWith "/" then
-//            if right.StartsWith "/" then
-//                left + right.Substring(1)
-//            else
-//                left + right
-//        else
-//            if right.StartsWith "/" then
-//                left + right
-//            else
-//                left + "/" + right
+    module QueryPart =
+
+        let ofString (kvp: string) =
+            let index = kvp.IndexOf('=')
+            if index >= 0 then
+                WithValue (kvp.Substring(0, index), kvp.Substring(index + 1))
+            else
+                WithoutValue kvp
+
+        let toString = function
+            | WithValue (key, value) -> key + "=" + value
+            | WithoutValue key -> key
+
+    let parseQueryString : string -> QueryPart array = fun queryString ->
+        let queryString = if queryString.StartsWith "?" then queryString.Substring(1) else queryString
+
+        queryString.Split([|'&'|], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.map QueryPart.ofString
+
+    let concatQueryStrings leftQueryStrings rightQueryStrings =
+        Array.append leftQueryStrings rightQueryStrings
+        |> Array.map QueryPart.toString
+        |> String.concat "&"
+
+    let concatUriStrings : string -> string -> string = fun leftPath rightPath ->
+        if leftPath.EndsWith "/" then
+            if rightPath.StartsWith "/" then
+                leftPath + rightPath.Substring(1)
+            else
+                leftPath + rightPath
+        else
+            if rightPath.StartsWith "/" then
+                leftPath + rightPath
+            else
+                leftPath + "/" + rightPath
+
+    let concat : Uri -> Uri -> string = fun absoluteUri relativeUri ->
+        let leftPath = absoluteUri.GetLeftPart(UriPartial.Path)
+        let leftQueryStrings = parseQueryString absoluteUri.Query
+        let rightPath = relativeUri.OriginalString
+        let rightPath, rightQuery =
+            let rightPath = relativeUri.OriginalString
+            let index = rightPath.IndexOf('?')
+            if index >= 0 then
+                rightPath.Substring(0, index), rightPath.Substring(index + 1)
+            else
+                rightPath, ""
+        let rightQueryStrings = parseQueryString rightQuery
+        let queryStrings = concatQueryStrings leftQueryStrings rightQueryStrings
+
+        let queryString =
+            if queryStrings.Length > 0 then
+                "?" + queryStrings
+            else
+                queryStrings
+
+        (concatUriStrings leftPath rightPath) + queryString
 
 type [<NoComparison>] RelativeUri = private RelativeUri of Uri
 
@@ -36,11 +83,7 @@ module RelativeUri =
 
     let toSystemUri (RelativeUri uri) = uri
 
-    let toString uri = (toSystemUri uri).ToString()
-
-    //let concat (RelativeUri left) (RelativeUri right) =
-    //    Uri'.concat left right
-    //    |> ofString
+    let toString uri = (toSystemUri uri).OriginalString
 
 type [<NoComparison>] AbsoluteUri = private AbsoluteUri of Uri
 
@@ -59,11 +102,11 @@ module AbsoluteUri =
 
     let toSystemUri (AbsoluteUri uri) = uri
 
-    let toString uri = (toSystemUri uri).ToString()
+    let toString uri = (toSystemUri uri).OriginalString
 
-    //let concat (AbsoluteUri left) (RelativeUri right) =
-    //    Uri'.concat left right
-    //    |> ofString
+    let concat (AbsoluteUri left) (RelativeUri right) =
+        Uri'.concat left right
+        |> ofString
 
 [<NoComparison>]
 [<RequireQualifiedAccess>]
