@@ -65,8 +65,7 @@ let ``given an HttpContent with a JSON string and HttpContent does not have medi
     |> Async.run
     |> Assert.errorWith (
         function
-        | ParseError (httpContent, errorMessage) ->
-            Assert.Equal(httpContent, httpContent)
+        | ParseError errorMessage ->
             Assert.Equal("The HTTP response content does not have a media type.", errorMessage)
         | err ->
             failwithf "Did not expect %A" err
@@ -83,8 +82,7 @@ let ``given an HttpContent with a JSON string and deserializers not having JSON 
     |> Async.run
     |> Assert.errorWith (
         function
-        | ParseError (httpContent, errorMessage) ->
-            Assert.Equal(httpContent, httpContent)
+        | ParseError errorMessage ->
             Assert.Equal($"Deserializer for media type {MediaType.toString MediaType.applicationJson} is not configured.", errorMessage)
         | err ->
             failwithf "Did not expect %A" err
@@ -101,8 +99,7 @@ let ``given an HttpContent with an invalid JSON string when parse then returns a
     |> Async.run
     |> Assert.errorWith (
         function
-        | DeserializeException (httpContent, ex) ->
-            Assert.Equal(httpContent, httpContent)
+        | DeserializeException ex ->
             Assert.True(ex.Message.StartsWith("""'<' is an invalid start of a value."""))
         | err ->
             failwithf "Did not expect %A" err

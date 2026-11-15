@@ -9,8 +9,8 @@ type Deserializer<'a> = string -> 'a
 
 [<NoComparison>]
 type ParseError =
-| ParseError of HttpContent * string
-| DeserializeException of HttpContent * exn
+| ParseError of string
+| DeserializeException of exn
 
 module HttpResponseContent =
 
@@ -34,10 +34,10 @@ module HttpResponseContent =
                 Ok deserializer
             | None ->
                 let message = $"Deserializer for media type {mediaType} is not configured."
-                Error (ParseError (httpContent, message))
+                Error (ParseError message)
         | None ->
             let message = "The HTTP response content does not have a media type."
-            Error (ParseError (httpContent, message))
+            Error (ParseError message)
 
     let tryDeserialize : Deserializer<'a> -> string -> Result<'a, exn> = fun deserialize string ->
         try
@@ -62,7 +62,7 @@ module HttpResponseContent =
                 | Ok deserializer ->
                     let! string = readAsString httpContent
                     return tryDeserialize deserializer string
-                           |> Result.mapError (fun ex -> DeserializeException (httpContent, ex))
+                           |> Result.mapError DeserializeException
                 | Error parseError ->
                     return Error parseError
             }
@@ -99,7 +99,7 @@ module HttpResponseContent =
                 | Ok deserializer ->
                     let! string = readAsString httpContent
                     return tryDeserialize deserializer string
-                           |> Result.mapError (fun ex -> DeserializeException (httpContent, ex))
+                           |> Result.mapError DeserializeException
                 | Error parseError ->
                     return Error parseError
             }

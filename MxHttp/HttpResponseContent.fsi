@@ -11,8 +11,8 @@ type Deserializer<'a> = string -> 'a
 
 [<NoComparison>]
 type ParseError =
-| ParseError of HttpContent * string
-| DeserializeException of HttpContent * exn
+| ParseError of string
+| DeserializeException of exn
 
 /// Functions to access HttpContent of HttpResponseMessage.
 module HttpResponseContent =
